@@ -98,10 +98,10 @@
   .cover-rule{border:0;border-top:2.5px solid #000;margin:0 0 6mm;}
   .cover-mid{display:flex;justify-content:space-between;gap:8mm;margin-bottom:6mm;}
   .cover-left{flex:1;}
-  .cover-onchu{font-size:15px;font-weight:700;border-bottom:1.5px solid #000;display:inline-block;padding:0 6px 2px;margin-bottom:7mm;}
+  .cover-onchu{font-size:15px;font-weight:400;border-bottom:1.5px solid #000;display:inline-block;padding:0 6px 2px;margin-bottom:7mm;}
   .cover-greet{font-size:13px;margin-left:1mm;}
   .cover-right{font-size:11.5px;line-height:1.9;white-space:nowrap;text-align:left;}
-  .cover-right .nm{font-size:13px;font-weight:700;}
+  .cover-right .nm{font-size:13px;font-weight:400;}
   table.cover-tbl{border-collapse:collapse;width:96%;margin:0 auto;font-size:12.5px;}
   table.cover-tbl td{border:1px solid #000;padding:7px 10px;}
   table.cover-tbl td.k{background:var(--label);width:30mm;text-align:center;letter-spacing:1px;white-space:nowrap;}
@@ -110,6 +110,13 @@
   .coverA .cover-tbl{width:62%;margin:0;}
   .coverA .cover-tbl td.k{background:#fff;letter-spacing:3px;}
   .coverB-spacer{height:40mm;}
+  /* form B 表紙：外枠で囲む */
+  .coverB-frame{border:1.4px solid #000;min-height:252mm;padding:0 14mm 14mm;}
+  .coverB-self{text-align:right;font-size:11.5px;line-height:2;margin-top:28mm;}
+  .coverB-self .nm{font-size:13px;font-weight:400;}
+  .coverB-greet{font-size:13px;margin:18mm 0 3mm;}
+  .coverB-tbl{width:100%;margin:0;}
+  .coverB-tbl td.k{background:#fff;width:34mm;letter-spacing:3px;}
 
   .page-title{text-align:center;font-size:22px;font-weight:800;letter-spacing:6px;margin:0 0 5mm;}
 
@@ -566,17 +573,17 @@
     var nameLbl=(type==="作業"?"作業名":"工事名"), placeLbl=(type==="作業"?"作業箇所":"工事箇所");
     var name=esc(byId("b_name").value)||"　", place=esc(byId("b_place").value)||"　", seko=esc(byId("b_seko").value)||"　";
     var st=wareki(byId("b_start").value)||"　", en=wareki(byId("b_end").value)||"　";
-    var d=document.createElement("div");
-    d.innerHTML='<div class="cover-title">'+title+'</div><hr class="cover-rule">'+
-      '<div class="cover-mid"><div class="cover-left"></div>'+
-      '<div class="cover-right">'+selfBlockHTML(false,true)+'</div></div>'+
-      '<div class="coverB-spacer"></div>'+
-      '<div class="cover-greet" style="margin-bottom:3mm">下記の通り'+(type==="作業"?"作業":"工事")+'を完了しましたので、ご報告申し上げます</div>'+
-      '<table class="cover-tbl"><tr><td class="k">'+nameLbl+'</td><td class="v">'+name+'</td></tr>'+
+    var d=document.createElement("div"); d.className="coverB";
+    d.innerHTML='<div class="coverB-frame">'+
+      '<div class="cover-title" style="margin:34mm 0 0;">'+title+'</div>'+
+      '<div class="coverB-self">'+selfBlockHTML(false,true)+'</div>'+
+      '<div class="coverB-greet">下記の通り'+(type==="作業"?"作業":"工事")+'を完了しましたので、ご報告申し上げます</div>'+
+      '<table class="cover-tbl coverB-tbl"><tr><td class="k">'+nameLbl+'</td><td class="v">'+name+'</td></tr>'+
       '<tr><td class="k">'+placeLbl+'</td><td class="v">'+place+'</td></tr>'+
       '<tr><td class="k">作業開始日</td><td class="v">'+esc(st)+'</td></tr>'+
       '<tr><td class="k">作業終了日</td><td class="v">'+esc(en)+'</td></tr>'+
-      '<tr><td class="k">施工者</td><td class="v">'+seko+'</td></tr></table>';
+      '<tr><td class="k">施工者</td><td class="v">'+seko+'</td></tr></table>'+
+      '</div>';
     return d;
   }
 
@@ -584,7 +591,8 @@
     var t=document.createElement("table"); t.className="blockA";
     var room=esc(b.room)||"　", c0=b.cells[0], c1=b.cells[1];
     function ph(c){return c.img?'<img src="'+c.img+'">':'<span class="ph">（写真なし）</span>';}
-    t.innerHTML='<tr><td class="label">タイトル</td><td class="title-val" colspan="3">'+room+'</td></tr>'+
+    t.innerHTML='<colgroup><col style="width:16mm"><col style="width:calc(50% - 16mm)"><col style="width:16mm"><col style="width:calc(50% - 16mm)"></colgroup>'+
+      '<tr><td class="label">タイトル</td><td class="title-val" colspan="3">'+room+'</td></tr>'+
       '<tr><td class="label">内容</td><td class="naiyou-val">'+(esc(c0.naiyou)||"　")+'</td><td class="label">内容</td><td class="naiyou-val">'+(esc(c1.naiyou)||"　")+'</td></tr>'+
       '<tr><td class="ba" colspan="2">'+esc(c0.label)+'</td><td class="ba" colspan="2">'+esc(c1.label)+'</td></tr>'+
       '<tr><td class="photo" colspan="2">'+ph(c0)+'</td><td class="photo" colspan="2">'+ph(c1)+'</td></tr>';
