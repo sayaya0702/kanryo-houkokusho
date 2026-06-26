@@ -1,0 +1,17 @@
+{
+  "name": "完了報告書 作成ツール",
+  "short_name": "完了報告書",
+  "description": "工事・作業完了報告書をスマホで作成しPDF出力するツール",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fdf4ec",
+  "theme_color": "#f97316",
+  "lang": "ja",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
