@@ -106,6 +106,9 @@
   table.cover-tbl td{border:1px solid #000;padding:7px 10px;}
   table.cover-tbl td.k{background:var(--label);width:30mm;text-align:center;letter-spacing:1px;white-space:nowrap;}
   table.cover-tbl td.v{text-align:center;}
+  /* form A: 元テンプレ準拠（白地ラベル・均等割り・左寄せ・幅狭め） */
+  .coverA .cover-tbl{width:62%;margin:0;}
+  .coverA .cover-tbl td.k{background:#fff;letter-spacing:3px;}
   .coverB-spacer{height:40mm;}
 
   .page-title{text-align:center;font-size:22px;font-weight:800;letter-spacing:6px;margin:0 0 5mm;}
@@ -113,10 +116,10 @@
   /* 形式A ブロック */
   table.blockA{border-collapse:collapse;width:100%;table-layout:fixed;margin-bottom:4mm;page-break-inside:avoid;break-inside:avoid;}
   table.blockA td{border:1px solid #000;padding:2px 4px;font-size:12px;text-align:center;vertical-align:middle;}
-  table.blockA td.label{background:var(--label);letter-spacing:3px;width:18mm;white-space:nowrap;}
-  table.blockA td.title-val{font-size:14px;font-weight:700;letter-spacing:2px;}
-  table.blockA td.naiyou-val{font-weight:600;}
-  table.blockA td.ba{background:var(--label);letter-spacing:3px;}
+  table.blockA td.label{letter-spacing:2px;width:18mm;white-space:nowrap;text-align:center;}
+  table.blockA td.title-val{font-size:13px;letter-spacing:2px;}
+  table.blockA td.naiyou-val{}
+  table.blockA td.ba{letter-spacing:2px;}
   table.blockA td.photo{height:56mm;padding:1.5mm;}
   table.blockA td.photo img{max-width:100%;max-height:56mm;display:block;margin:0 auto;image-orientation:from-image;}
   table.blockA td.photo .ph{color:#bbb;font-size:11px;}
