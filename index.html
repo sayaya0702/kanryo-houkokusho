@@ -46,6 +46,17 @@
   .field input:focus,.field select:focus,.field textarea:focus{outline:2px solid var(--accent);border-color:var(--accent);}
   details.adv{margin-top:8px;border-top:1px dashed #e7d6c4;padding-top:8px;}
   details.adv summary{font-size:12px;color:var(--accent2);cursor:pointer;font-weight:700;}
+  .muted-note{color:#b08968;font-weight:400;font-size:11px;}
+  .master-h{font-size:12px;font-weight:700;color:var(--accent2);margin:12px 0 6px;}
+  .master-list{display:flex;flex-direction:column;gap:5px;}
+  .master-row{display:flex;align-items:center;gap:8px;background:#fffaf4;border:1px solid #f0e2d2;border-radius:7px;padding:6px 9px;font-size:13px;}
+  .master-row .nm{flex:1;}
+  .master-row .kd{font-size:11px;color:#9a3412;background:#fff1e6;border-radius:5px;padding:1px 6px;}
+  .master-row .del{border:0;background:#fee2e2;color:#b91c1c;border-radius:5px;font-size:12px;padding:3px 8px;cursor:pointer;font-weight:700;}
+  .master-empty{font-size:12px;color:#b89a7c;padding:4px 2px;}
+  .master-add{display:flex;gap:6px;margin-top:6px;align-items:center;flex-wrap:wrap;}
+  .master-add input{flex:1;min-width:120px;border:1px solid #e2cdb8;border-radius:7px;padding:7px 9px;font-size:14px;font-family:inherit;}
+  .master-add select{border:1px solid #e2cdb8;border-radius:7px;padding:7px;font-size:13px;font-family:inherit;}
 
   /* 形式タブ */
   .seg{display:inline-flex;background:#fbe9d8;border-radius:10px;padding:4px;gap:4px;}
@@ -172,12 +183,13 @@
       <!-- 形式A 用 -->
       <div id="hdrA">
         <div class="grid">
-          <div class="field"><label>提出先（元請）会社名 ＋ 御中</label><input id="a_onchu" placeholder="例：株式会社ハウジング・コム"></div>
+          <div class="field"><label>提出先（元請）<span class="muted-note">／一覧から選択も可</span></label><input id="a_onchu" list="dl_onchu" placeholder="例：株式会社ハウジング・コム"></div>
+          <div class="field"><label>敬称（提出先が法人か個人か）</label><select id="a_kind"><option value="法人">法人 → 御中</option><option value="個人">個人 → 様</option></select></div>
           <div class="field"><label>工事名</label><input id="a_kouji" placeholder="例：◯◯マンション修繕工事"></div>
+          <div class="field"><label>作成日</label><input id="a_date" type="date"></div>
           <div class="field"><label>工事期間（開始）</label><input id="a_start" type="date"></div>
           <div class="field"><label>工事期間（終了）</label><input id="a_end" type="date"></div>
-          <div class="field"><label>施工者</label><input id="a_seko"></div>
-          <div class="field"><label>作成日</label><input id="a_date" type="date"></div>
+          <div class="field"><label>施工者<span class="muted-note">／一覧から選択も可</span></label><input id="a_seko" list="dl_seko"></div>
         </div>
       </div>
 
@@ -189,7 +201,7 @@
           </div>
           <div class="field"><label><span class="b_lbl_name">工事</span>名</label><input id="b_name" placeholder="例：U字溝清掃作業"></div>
           <div class="field"><label><span class="b_lbl_place">工事</span>箇所</label><input id="b_place" placeholder="例：◯◯県◯◯市…"></div>
-          <div class="field"><label>施工者</label><input id="b_seko"></div>
+          <div class="field"><label>施工者<span class="muted-note">／一覧から選択も可</span></label><input id="b_seko" list="dl_seko"></div>
           <div class="field"><label>作業開始日</label><input id="b_start" type="date"></div>
           <div class="field"><label>作業終了日</label><input id="b_end" type="date"></div>
         </div>
@@ -210,7 +222,29 @@
         </div>
         <div class="hint" style="margin-top:6px">※ 差出人・担当者はこの端末に記憶され、次回も自動で入ります。</div>
       </details>
+
+      <details class="adv">
+        <summary>マスタ管理（提出先・施工者の一覧／削除）</summary>
+        <div style="margin-top:8px">
+          <div class="hint">新しく入力した提出先・施工者は<b>自動でマスタに登録</b>され、次回から入力欄の一覧（▼）に出ます。不要なものはここで削除できます。</div>
+          <div class="master-h">提出先マスタ</div>
+          <div id="masterOnchuList" class="master-list"></div>
+          <div class="master-add">
+            <input id="addOnchuName" placeholder="提出先名を追加">
+            <select id="addOnchuKind"><option value="法人">法人</option><option value="個人">個人</option></select>
+            <button class="btn sm" id="addOnchuBtn" type="button">追加</button>
+          </div>
+          <div class="master-h">施工者マスタ</div>
+          <div id="masterSekoList" class="master-list"></div>
+          <div class="master-add">
+            <input id="addSekoName" placeholder="施工者名を追加">
+            <button class="btn sm" id="addSekoBtn" type="button">追加</button>
+          </div>
+        </div>
+      </details>
     </div>
+    <datalist id="dl_onchu"></datalist>
+    <datalist id="dl_seko"></datalist>
 
     <!-- 写真 -->
     <div class="card">
@@ -276,11 +310,64 @@
       var s=JSON.parse(localStorage.getItem("report_self_v2")||"{}");
       SELF_IDS.forEach(function(k){ if(s[k]!=null){ byId(k).value=s[k]; ok=true; } });
     }catch(e){}
-    if(!ok){ applyPreset("gtrust"); byId("preset").value="gtrust"; }
+    if(!ok){ applyPreset("sazanka"); byId("preset").value="sazanka"; }
   }
   function saveSelf(){
     var s={}; SELF_IDS.forEach(function(k){ s[k]=byId(k).value; });
     try{ localStorage.setItem("report_self_v2",JSON.stringify(s)); }catch(e){}
+  }
+
+  /* ===== マスタ（提出先・施工者） ===== */
+  var mOnchu=[]; // [{name,kind}]
+  var mSeko=[];  // [name]
+  function loadMaster(){
+    try{ mOnchu=JSON.parse(localStorage.getItem("report_m_onchu")||"[]")||[]; }catch(e){ mOnchu=[]; }
+    try{ mSeko=JSON.parse(localStorage.getItem("report_m_seko")||"[]")||[]; }catch(e){ mSeko=[]; }
+    if(mSeko.length===0){ mSeko=["株式会社SAZANKA","株式会社G-Trust"]; saveMaster(); }
+  }
+  function saveMaster(){
+    try{ localStorage.setItem("report_m_onchu",JSON.stringify(mOnchu)); localStorage.setItem("report_m_seko",JSON.stringify(mSeko)); }catch(e){}
+  }
+  function registerOnchu(name,kind){
+    name=(name||"").trim(); if(!name)return;
+    var hit=null; for(var i=0;i<mOnchu.length;i++){ if(mOnchu[i].name===name){hit=mOnchu[i];break;} }
+    if(hit){ if(kind && hit.kind!==kind){ hit.kind=kind; saveMaster(); refreshMaster(); } return; }
+    mOnchu.push({name:name,kind:kind||"法人"}); saveMaster(); refreshMaster();
+  }
+  function registerSeko(name){
+    name=(name||"").trim(); if(!name)return;
+    if(mSeko.indexOf(name)>=0)return;
+    mSeko.push(name); saveMaster(); refreshMaster();
+  }
+  function delOnchu(name){ mOnchu=mOnchu.filter(function(o){return o.name!==name;}); saveMaster(); refreshMaster(); }
+  function delSeko(name){ mSeko=mSeko.filter(function(n){return n!==name;}); saveMaster(); refreshMaster(); }
+  function findOnchu(name){ name=(name||"").trim(); for(var i=0;i<mOnchu.length;i++){ if(mOnchu[i].name===name)return mOnchu[i]; } return null; }
+
+  function refreshMaster(){
+    // datalist 提出先
+    var dlo=byId("dl_onchu"); dlo.innerHTML="";
+    mOnchu.forEach(function(o){ var op=document.createElement("option"); op.value=o.name; op.label=(o.kind==="個人"?"個人/様":"法人/御中"); dlo.appendChild(op); });
+    // datalist 施工者
+    var dls=byId("dl_seko"); dls.innerHTML="";
+    mSeko.forEach(function(n){ var op=document.createElement("option"); op.value=n; dls.appendChild(op); });
+    // 管理リスト 提出先
+    var lo=byId("masterOnchuList"); lo.innerHTML="";
+    if(mOnchu.length===0){ lo.innerHTML='<div class="master-empty">（まだありません）</div>'; }
+    mOnchu.forEach(function(o){
+      var row=document.createElement("div"); row.className="master-row";
+      row.innerHTML='<span class="nm">'+esc(o.name)+'</span><span class="kd">'+(o.kind==="個人"?"様":"御中")+'</span>';
+      var b=document.createElement("button"); b.type="button"; b.className="del"; b.textContent="削除";
+      b.addEventListener("click",function(){ delOnchu(o.name); }); row.appendChild(b); lo.appendChild(row);
+    });
+    // 管理リスト 施工者
+    var ls=byId("masterSekoList"); ls.innerHTML="";
+    if(mSeko.length===0){ ls.innerHTML='<div class="master-empty">（まだありません）</div>'; }
+    mSeko.forEach(function(n){
+      var row=document.createElement("div"); row.className="master-row";
+      row.innerHTML='<span class="nm">'+esc(n)+'</span>';
+      var b=document.createElement("button"); b.type="button"; b.className="del"; b.textContent="削除";
+      b.addEventListener("click",function(){ delSeko(n); }); row.appendChild(b); ls.appendChild(row);
+    });
   }
 
   /* ===== 画像取り込み（EXIF補正＋縮小） ===== */
@@ -454,13 +541,14 @@
 
   function buildCoverA(){
     var onchu=esc(byId("a_onchu").value)||"　";
+    var hon=(byId("a_kind").value==="個人")?"様":"御中";
     var kouji=esc(byId("a_kouji").value)||"　";
     var seko=esc(byId("a_seko").value)||"　";
     var date=fmtSlash(byId("a_date").value);
     var kikan=(fmtSlash(byId("a_start").value)||"")+"〜"+(fmtSlash(byId("a_end").value)||""); if(kikan==="〜")kikan="　";
     var d=document.createElement("div");
     d.innerHTML='<div class="cover-title">工事完了報告書</div><hr class="cover-rule">'+
-      '<div class="cover-mid"><div class="cover-left"><div class="cover-onchu">'+onchu+'　御中</div>'+
+      '<div class="cover-mid"><div class="cover-left"><div class="cover-onchu">'+onchu+'　'+hon+'</div>'+
       '<div class="cover-greet">工事が完了しましたのでご報告いたします。</div></div>'+
       '<div class="cover-right">作 成 日 ： '+esc(date)+'<br>'+selfBlockHTML(true,true)+'</div></div>'+
       '<table class="cover-tbl"><tr><td class="k">工事名</td><td class="v">'+kouji+'</td></tr>'+
@@ -551,6 +639,9 @@
   function clearTransforms(){ pagesEl.querySelectorAll(".page-holder").forEach(function(h){ var pg=h.firstChild; pg.style.transform="none"; h.style.width="auto"; h.style.height="auto"; }); }
 
   async function generatePDF(){
+    // 使用した提出先・施工者をマスタへ自動登録
+    if(format==="A"){ registerOnchu(byId("a_onchu").value, byId("a_kind").value); registerSeko(byId("a_seko").value); }
+    else { registerSeko(byId("b_seko").value); }
     renderPreview();
     await new Promise(function(r){setTimeout(r,350);});
     if(!window.jspdf || !window.html2canvas){
@@ -595,6 +686,19 @@
   /* ===== イベント ===== */
   Array.prototype.forEach.call(document.querySelectorAll(".seg button"),function(b){ b.addEventListener("click",function(){setFormat(this.dataset.fmt);}); });
   ["a_onchu","a_kouji","a_start","a_end","a_seko","a_date","b_type","b_name","b_place","b_seko","b_start","b_end"].forEach(function(id){ byId(id).addEventListener("input",schedulePreview); });
+  byId("a_kind").addEventListener("change",function(){
+    schedulePreview();
+    var o=findOnchu(byId("a_onchu").value); if(o){ o.kind=this.value; saveMaster(); refreshMaster(); }
+  });
+  // 提出先を入力/選択したら、マスタに在れば敬称を自動反映
+  byId("a_onchu").addEventListener("input",function(){ var o=findOnchu(this.value); if(o){ byId("a_kind").value=o.kind; } });
+  // 入力欄を離れたら自動でマスタ登録
+  byId("a_onchu").addEventListener("change",function(){ registerOnchu(this.value, byId("a_kind").value); });
+  byId("a_seko").addEventListener("change",function(){ registerSeko(this.value); });
+  byId("b_seko").addEventListener("change",function(){ registerSeko(this.value); });
+  // マスタ手動追加
+  byId("addOnchuBtn").addEventListener("click",function(){ registerOnchu(byId("addOnchuName").value, byId("addOnchuKind").value); byId("addOnchuName").value=""; });
+  byId("addSekoBtn").addEventListener("click",function(){ registerSeko(byId("addSekoName").value); byId("addSekoName").value=""; });
   SELF_IDS.forEach(function(id){ if(id!=="preset") byId(id).addEventListener("input",function(){schedulePreview();saveSelf();}); });
   byId("preset").addEventListener("change",function(){ applyPreset(this.value); saveSelf(); });
   byId("b_type").addEventListener("change",function(){
@@ -615,8 +719,10 @@
   /* ===== 初期化 ===== */
   function todayStr(){var d=new Date();return d.getFullYear()+"-"+("0"+(d.getMonth()+1)).slice(-2)+"-"+("0"+d.getDate()).slice(-2);}
   loadSelf();
-  if(!byId("a_seko").value) byId("a_seko").value=byId("s_self").value;
-  if(!byId("b_seko").value) byId("b_seko").value=byId("s_self").value;
+  loadMaster();
+  if(!byId("a_seko").value) byId("a_seko").value="株式会社SAZANKA";
+  if(!byId("b_seko").value) byId("b_seko").value="株式会社SAZANKA";
+  refreshMaster();
   byId("a_date").value=todayStr();
   setFormat("A");
   renderPreview();
