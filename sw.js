@@ -1,5 +1,6 @@
-// 完了報告書ツール Service Worker（オフライン対応）
-const CACHE = "houkokusho-v1";
+// 完了報告書ツール Service Worker
+// HTMLはネット優先（最新を取得／オフライン時のみキャッシュ）、部品・画像はキャッシュ優先
+const CACHE = "houkokusho-v2";
 const ASSETS = [
   "./",
   "./index.html",
@@ -25,17 +26,33 @@ self.addEventListener("activate", (e) => {
   );
 });
 
-// cache-first（無ければネット→キャッシュ保存）
 self.addEventListener("fetch", (e) => {
-  if (e.request.method !== "GET") return;
-  e.respondWith(
-    caches.match(e.request).then((hit) => {
-      if (hit) return hit;
-      return fetch(e.request).then((res) => {
+  const req = e.request;
+  if (req.method !== "GET") return;
+  const isHTML = req.mode === "navigate" ||
+    (req.headers.get("accept") || "").includes("text/html");
+
+  if (isHTML) {
+    // ネット優先：最新HTMLを取得し、取れたらキャッシュ更新。オフライン時はキャッシュ。
+    e.respondWith(
+      fetch(req).then((res) => {
         const copy = res.clone();
-        caches.open(CACHE).then((c) => c.put(e.request, copy)).catch(() => {});
+        caches.open(CACHE).then((c) => c.put("./index.html", copy)).catch(() => {});
         return res;
-      }).catch(() => caches.match("./index.html"));
+      }).catch(() => caches.match(req).then((hit) => hit || caches.match("./index.html")))
+    );
+    return;
+  }
+
+  // それ以外（部品・画像・manifest）：キャッシュ優先
+  e.respondWith(
+    caches.match(req).then((hit) => {
+      if (hit) return hit;
+      return fetch(req).then((res) => {
+        const copy = res.clone();
+        caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
+        return res;
+      });
     })
   );
 });
