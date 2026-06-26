@@ -93,7 +93,8 @@
   .page{width:var(--page-w);min-height:var(--page-h);background:#fff;padding:var(--pad);box-shadow:0 2px 10px rgba(0,0,0,.18);position:relative;}
 
   /* 表紙 共通 */
-  .cover-title{text-align:center;font-size:30px;font-weight:800;letter-spacing:6px;margin:2mm 0 1mm;}
+  .cover-title{text-align:center;font-size:30px;font-weight:800;letter-spacing:6px;margin:9mm 0 1mm;}
+  .coverA{margin-bottom:6mm;}
   .cover-rule{border:0;border-top:2.5px solid #000;margin:0 0 6mm;}
   .cover-mid{display:flex;justify-content:space-between;gap:8mm;margin-bottom:6mm;}
   .cover-left{flex:1;}
@@ -546,7 +547,7 @@
     var seko=esc(byId("a_seko").value)||"　";
     var date=fmtSlash(byId("a_date").value);
     var kikan=(fmtSlash(byId("a_start").value)||"")+"〜"+(fmtSlash(byId("a_end").value)||""); if(kikan==="〜")kikan="　";
-    var d=document.createElement("div");
+    var d=document.createElement("div"); d.className="coverA";
     d.innerHTML='<div class="cover-title">工事完了報告書</div><hr class="cover-rule">'+
       '<div class="cover-mid"><div class="cover-left"><div class="cover-onchu">'+onchu+'　'+hon+'</div>'+
       '<div class="cover-greet">工事が完了しましたのでご報告いたします。</div></div>'+
