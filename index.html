@@ -51,12 +51,20 @@
   .master-list{display:flex;flex-direction:column;gap:5px;}
   .master-row{display:flex;align-items:center;gap:8px;background:#fffaf4;border:1px solid #f0e2d2;border-radius:7px;padding:6px 9px;font-size:13px;}
   .master-row .nm{flex:1;}
-  .master-row .kd{font-size:11px;color:#9a3412;background:#fff1e6;border-radius:5px;padding:1px 6px;}
+  .master-row .kd{border:1px solid #fdba74;font-size:11px;color:#9a3412;background:#fff1e6;border-radius:5px;padding:2px 7px;cursor:pointer;font-weight:700;}
+  .master-row .edt{border:0;background:#fff1e6;color:#9a3412;border-radius:5px;font-size:12px;padding:3px 8px;cursor:pointer;font-weight:700;}
   .master-row .del{border:0;background:#fee2e2;color:#b91c1c;border-radius:5px;font-size:12px;padding:3px 8px;cursor:pointer;font-weight:700;}
   .master-empty{font-size:12px;color:#b89a7c;padding:4px 2px;}
   .master-add{display:flex;gap:6px;margin-top:6px;align-items:center;flex-wrap:wrap;}
   .master-add input{flex:1;min-width:120px;border:1px solid #e2cdb8;border-radius:7px;padding:7px 9px;font-size:14px;font-family:inherit;}
   .master-add select{border:1px solid #e2cdb8;border-radius:7px;padding:7px;font-size:13px;font-family:inherit;}
+
+  /* タブバー */
+  .tabbar{display:flex;gap:6px;margin-bottom:14px;}
+  .tabbtn{flex:1;border:0;background:#fbe9d8;color:var(--accent2);font-size:14px;font-weight:700;padding:11px;border-radius:10px;cursor:pointer;}
+  .tabbtn.on{background:var(--accent);color:#fff;box-shadow:0 2px 6px rgba(0,0,0,.15);}
+  .share-status{font-size:12px;font-weight:700;padding:7px 11px;border-radius:8px;background:#fff1e6;color:#9a3412;display:inline-block;}
+  .share-status.on{background:#dcfce7;color:#166534;}
 
   /* 形式タブ */
   .seg{display:inline-flex;background:#fbe9d8;border-radius:10px;padding:4px;gap:4px;}
@@ -181,6 +189,12 @@
     </div>
   </header>
 
+  <div class="tabbar">
+    <button class="tabbtn on" id="tabBtnCreate" type="button">📝 報告書を作る</button>
+    <button class="tabbtn" id="tabBtnMaster" type="button">📋 マスター管理</button>
+  </div>
+
+  <div id="tabCreate">
   <div id="editorArea">
 
     <!-- 形式選択 -->
@@ -242,25 +256,7 @@
         <div class="hint" style="margin-top:6px">※ 差出人・担当者はこの端末に記憶され、次回も自動で入ります。</div>
       </details>
 
-      <details class="adv">
-        <summary>マスタ管理（提出先・施工者の一覧／削除）</summary>
-        <div style="margin-top:8px">
-          <div class="hint">新しく入力した提出先・施工者は<b>自動でマスタに登録</b>され、次回から入力欄の一覧（▼）に出ます。不要なものはここで削除できます。</div>
-          <div class="master-h">提出先マスタ</div>
-          <div id="masterOnchuList" class="master-list"></div>
-          <div class="master-add">
-            <input id="addOnchuName" placeholder="提出先名を追加">
-            <select id="addOnchuKind"><option value="法人">法人</option><option value="個人">個人</option></select>
-            <button class="btn sm" id="addOnchuBtn" type="button">追加</button>
-          </div>
-          <div class="master-h">施工者マスタ</div>
-          <div id="masterSekoList" class="master-list"></div>
-          <div class="master-add">
-            <input id="addSekoName" placeholder="施工者名を追加">
-            <button class="btn sm" id="addSekoBtn" type="button">追加</button>
-          </div>
-        </div>
-      </details>
+      <div class="hint" style="margin-top:8px">※ 入力した提出先・施工者は<b>自動でマスタ登録</b>され、入力欄の一覧（▼）から選べます。一覧の確認・編集・削除は上の「📋 マスター管理」タブから。</div>
     </div>
     <datalist id="dl_onchu"></datalist>
     <datalist id="dl_seko"></datalist>
@@ -285,6 +281,30 @@
   <div id="previewWrap">
     <p class="pv-title screen-only">▼ 出来上がりプレビュー（このままPDFになります）</p>
     <div id="pages"></div>
+  </div>
+  </div><!-- /tabCreate -->
+
+  <div id="tabMaster" style="display:none">
+    <div class="card">
+      <h2><span class="num">📋</span>マスター管理</h2>
+      <div id="shareStatus" class="share-status">共有：未接続（この端末だけに保存）</div>
+      <div class="hint" style="margin:8px 0 4px">提出先・施工者の一覧です。報告書作成時の入力欄（▼）に出ます。ここで追加・編集・削除できます。</div>
+
+      <div class="master-h">🏢 提出先マスタ（宛名）</div>
+      <div id="masterOnchuList" class="master-list"></div>
+      <div class="master-add">
+        <input id="addOnchuName" placeholder="提出先名を追加（例：株式会社◯◯）">
+        <select id="addOnchuKind"><option value="法人">法人（御中）</option><option value="個人">個人（様）</option></select>
+        <button class="btn sm" id="addOnchuBtn" type="button">＋追加</button>
+      </div>
+
+      <div class="master-h">🔧 施工者マスタ</div>
+      <div id="masterSekoList" class="master-list"></div>
+      <div class="master-add">
+        <input id="addSekoName" placeholder="施工者名を追加">
+        <button class="btn sm" id="addSekoBtn" type="button">＋追加</button>
+      </div>
+    </div>
   </div>
 
 </div>
@@ -369,8 +389,11 @@
     if(mSeko.indexOf(name)>=0)return;
     mSeko.push(name); saveMaster(); refreshMaster();
   }
-  function delOnchu(name){ mOnchu=mOnchu.filter(function(o){return o.name!==name;}); saveMaster(); refreshMaster(); }
-  function delSeko(name){ mSeko=mSeko.filter(function(n){return n!==name;}); saveMaster(); refreshMaster(); }
+  function delOnchu(name){ if(!confirm("「"+name+"」を削除しますか？"))return; mOnchu=mOnchu.filter(function(o){return o.name!==name;}); saveMaster(); refreshMaster(); }
+  function delSeko(name){ if(!confirm("「"+name+"」を削除しますか？"))return; mSeko=mSeko.filter(function(n){return n!==name;}); saveMaster(); refreshMaster(); }
+  function editOnchu(old){ var nv=prompt("提出先名を編集",old); if(nv==null)return; nv=nv.trim(); if(!nv)return; var o=findOnchu(old); if(o)o.name=nv; saveMaster(); refreshMaster(); }
+  function toggleOnchuKind(name){ var o=findOnchu(name); if(o){ o.kind=(o.kind==="個人"?"法人":"個人"); saveMaster(); refreshMaster(); } }
+  function editSeko(old){ var nv=prompt("施工者名を編集",old); if(nv==null)return; nv=nv.trim(); if(!nv)return; var i=mSeko.indexOf(old); if(i>=0)mSeko[i]=nv; saveMaster(); refreshMaster(); }
   function findOnchu(name){ name=(name||"").trim(); for(var i=0;i<mOnchu.length;i++){ if(mOnchu[i].name===name)return mOnchu[i]; } return null; }
 
   function refreshMaster(){
@@ -385,18 +408,22 @@
     if(mOnchu.length===0){ lo.innerHTML='<div class="master-empty">（まだありません）</div>'; }
     mOnchu.forEach(function(o){
       var row=document.createElement("div"); row.className="master-row";
-      row.innerHTML='<span class="nm">'+esc(o.name)+'</span><span class="kd">'+(o.kind==="個人"?"様":"御中")+'</span>';
-      var b=document.createElement("button"); b.type="button"; b.className="del"; b.textContent="削除";
-      b.addEventListener("click",function(){ delOnchu(o.name); }); row.appendChild(b); lo.appendChild(row);
+      var nm=document.createElement("span"); nm.className="nm"; nm.textContent=o.name;
+      var kd=document.createElement("button"); kd.type="button"; kd.className="kd"; kd.title="法人/個人を切替"; kd.textContent=(o.kind==="個人"?"様":"御中");
+      kd.addEventListener("click",function(){ toggleOnchuKind(o.name); });
+      var ed=document.createElement("button"); ed.type="button"; ed.className="edt"; ed.textContent="編集"; ed.addEventListener("click",function(){ editOnchu(o.name); });
+      var b=document.createElement("button"); b.type="button"; b.className="del"; b.textContent="削除"; b.addEventListener("click",function(){ delOnchu(o.name); });
+      row.appendChild(nm); row.appendChild(kd); row.appendChild(ed); row.appendChild(b); lo.appendChild(row);
     });
     // 管理リスト 施工者
     var ls=byId("masterSekoList"); ls.innerHTML="";
     if(mSeko.length===0){ ls.innerHTML='<div class="master-empty">（まだありません）</div>'; }
     mSeko.forEach(function(n){
       var row=document.createElement("div"); row.className="master-row";
-      row.innerHTML='<span class="nm">'+esc(n)+'</span>';
-      var b=document.createElement("button"); b.type="button"; b.className="del"; b.textContent="削除";
-      b.addEventListener("click",function(){ delSeko(n); }); row.appendChild(b); ls.appendChild(row);
+      var nm=document.createElement("span"); nm.className="nm"; nm.textContent=n;
+      var ed=document.createElement("button"); ed.type="button"; ed.className="edt"; ed.textContent="編集"; ed.addEventListener("click",function(){ editSeko(n); });
+      var b=document.createElement("button"); b.type="button"; b.className="del"; b.textContent="削除"; b.addEventListener("click",function(){ delSeko(n); });
+      row.appendChild(nm); row.appendChild(ed); row.appendChild(b); ls.appendChild(row);
     });
   }
 
@@ -770,6 +797,19 @@
   byId("btnShare").addEventListener("click",doShare);
   byId("btnDownload").addEventListener("click",doDownload);
   byId("btnResultClose").addEventListener("click",function(){ byId("resultModal").style.display="none"; });
+  // タブ切替
+  function showTab(which){
+    var create=which==="create";
+    byId("tabCreate").style.display=create?"":"none";
+    byId("tabMaster").style.display=create?"none":"";
+    byId("tabBtnCreate").classList.toggle("on",create);
+    byId("tabBtnMaster").classList.toggle("on",!create);
+    document.querySelector("header.top .actions").style.visibility=create?"visible":"hidden";
+    if(!create) refreshMaster();
+    window.scrollTo(0,0);
+  }
+  byId("tabBtnCreate").addEventListener("click",function(){ showTab("create"); });
+  byId("tabBtnMaster").addEventListener("click",function(){ showTab("master"); });
   byId("btnClear").addEventListener("click",function(){
     if(!confirm("入力内容と写真をすべて消して新規作成しますか？\n（差出人情報は残ります）"))return;
     blocksA=[]; blocksB=[]; seq=1;
