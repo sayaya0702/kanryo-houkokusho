@@ -790,7 +790,7 @@
   function doShare(){
     try{
       var file=new File([_resBlob],_resName,{type:"application/pdf"});
-      navigator.share({files:[file],title:_resName}).catch(function(){});
+      navigator.share({files:[file]}).catch(function(){});
     }catch(e){ alert("共有できませんでした。ダウンロードをお使いください。"); }
   }
   function doDownload(){

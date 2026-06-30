@@ -1,6 +1,6 @@
 // 完了報告書ツール Service Worker
 // HTMLはネット優先（最新を取得／オフライン時のみキャッシュ）、部品・画像はキャッシュ優先
-const CACHE = "houkokusho-v6";
+const CACHE = "houkokusho-v7";
 const ASSETS = [
   "./",
   "./index.html",
