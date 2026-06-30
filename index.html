@@ -149,6 +149,14 @@
 
   #overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);color:#fff;display:none;align-items:center;justify-content:center;z-index:100;font-size:16px;font-weight:700;}
   #overlay .box{background:#7c2d12;padding:18px 26px;border-radius:12px;}
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:110;padding:20px;}
+  .modal-box{background:#fff;border-radius:14px;padding:22px 20px 16px;max-width:360px;width:100%;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,.3);}
+  .modal-title{font-size:17px;font-weight:800;color:var(--accent2);margin-bottom:6px;}
+  .modal-name{font-size:13px;color:#555;word-break:break-all;margin-bottom:16px;}
+  .modal-btn{width:100%;padding:13px;font-size:15px;margin-bottom:10px;}
+  .modal-dl{background:#fff1e6;color:var(--accent2);}
+  .modal-hint{font-size:12px;color:var(--muted);line-height:1.6;margin:4px 0 12px;}
+  .modal-close{border:0;background:transparent;color:#888;font-size:13px;cursor:pointer;text-decoration:underline;}
 
   @media print{
     @page{size:A4;margin:0;}
@@ -169,7 +177,7 @@
     <h1>📋 完了報告書 作成ツール</h1>
     <div class="actions">
       <button class="btn ghost" id="btnClear" type="button">新規</button>
-      <button class="btn primary" id="btnPDF" type="button">PDFを保存</button>
+      <button class="btn primary" id="btnPDF" type="button">PDF作成</button>
     </div>
   </header>
 
@@ -282,6 +290,17 @@
 </div>
 
 <div id="overlay"><div class="box" id="ovText">PDFを作成中…</div></div>
+
+<div id="resultModal" class="modal">
+  <div class="modal-box">
+    <div class="modal-title">✅ PDFができました</div>
+    <div class="modal-name" id="resultName"></div>
+    <button class="btn primary modal-btn" id="btnShare" type="button">📤 共有する（LINE・メール等）</button>
+    <button class="btn modal-btn modal-dl" id="btnDownload" type="button">⬇️ ダウンロード（端末に保存）</button>
+    <div class="modal-hint" id="resultHint"></div>
+    <button class="modal-close" id="btnResultClose" type="button">閉じる</button>
+  </div>
+</div>
 
 <script>
 (function(){
@@ -673,13 +692,40 @@
         if(i>0)pdf.addPage();
         pdf.addImage(img,"JPEG",0,0,210,297);
       }
-      pdf.save(pdfName()+".pdf");
+      var blob=pdf.output("blob");
+      showResult(blob, pdfName()+".pdf");
     }catch(e){
       alert("PDF作成でエラーが発生しました。印刷画面から保存してください。\n"+e);
       window.print();
     }finally{
       ov.style.display="none"; fitPreview();
     }
+  }
+
+  /* ===== できたPDFの共有／保存 ===== */
+  var _resBlob=null, _resName="report.pdf";
+  function showResult(blob, fname){
+    _resBlob=blob; _resName=fname;
+    byId("resultName").textContent=fname;
+    var canShare=false;
+    try{ var f=new File([blob],fname,{type:"application/pdf"}); canShare=!!(navigator.canShare&&navigator.canShare({files:[f]})); }catch(e){}
+    byId("btnShare").style.display=canShare?"":"none";
+    byId("resultHint").textContent=canShare
+      ? "「共有」を押すと、PDFファイルだけが送られます（blobのURLは付きません）。"
+      : "「ダウンロード」で端末に保存→保存先アプリから共有してください。";
+    byId("resultModal").style.display="flex";
+  }
+  function doShare(){
+    try{
+      var file=new File([_resBlob],_resName,{type:"application/pdf"});
+      navigator.share({files:[file],title:_resName}).catch(function(){});
+    }catch(e){ alert("共有できませんでした。ダウンロードをお使いください。"); }
+  }
+  function doDownload(){
+    var url=URL.createObjectURL(_resBlob);
+    var a=document.createElement("a"); a.href=url; a.download=_resName;
+    document.body.appendChild(a); a.click();
+    setTimeout(function(){ URL.revokeObjectURL(url); a.remove(); },1500);
   }
 
   /* ===== 形式切替 ===== */
@@ -721,6 +767,9 @@
   byId("btnAddBlock").addEventListener("click",addBlock);
   byId("btnAddBlock2").addEventListener("click",addBlock);
   byId("btnPDF").addEventListener("click",generatePDF);
+  byId("btnShare").addEventListener("click",doShare);
+  byId("btnDownload").addEventListener("click",doDownload);
+  byId("btnResultClose").addEventListener("click",function(){ byId("resultModal").style.display="none"; });
   byId("btnClear").addEventListener("click",function(){
     if(!confirm("入力内容と写真をすべて消して新規作成しますか？\n（差出人情報は残ります）"))return;
     blocksA=[]; blocksB=[]; seq=1;
