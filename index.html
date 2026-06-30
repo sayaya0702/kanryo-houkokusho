@@ -49,6 +49,15 @@
   details.adv{margin-top:8px;border-top:1px dashed #e7d6c4;padding-top:8px;}
   details.adv summary{font-size:12px;color:var(--accent2);cursor:pointer;font-weight:700;}
   .muted-note{color:#b08968;font-weight:400;font-size:11px;}
+  /* オートコンプリート */
+  .ac-wrap{position:relative;}
+  .ac-list{position:absolute;left:0;right:0;top:100%;z-index:50;background:#fff;border:1px solid #e2cdb8;border-top:0;border-radius:0 0 8px 8px;max-height:220px;overflow-y:auto;-webkit-overflow-scrolling:touch;box-shadow:0 8px 18px rgba(0,0,0,.14);display:none;}
+  .ac-item{padding:10px 11px;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:8px;border-top:1px solid #f3e9dd;}
+  .ac-item:first-child{border-top:0;}
+  .ac-item.active,.ac-item:hover{background:#fff1e6;}
+  .ac-item .nm{flex:1;}
+  .ac-item .kd{font-size:11px;color:#9a3412;background:#fff1e6;border:1px solid #fdba74;border-radius:5px;padding:1px 6px;white-space:nowrap;}
+  .ac-none{padding:9px 11px;font-size:12px;color:#b89a7c;}
   .master-h{font-size:12px;font-weight:700;color:var(--accent2);margin:12px 0 6px;}
   .master-list{display:flex;flex-direction:column;gap:5px;}
   .master-row{display:flex;align-items:center;gap:8px;background:#fffaf4;border:1px solid #f0e2d2;border-radius:7px;padding:6px 9px;font-size:13px;}
@@ -218,13 +227,13 @@
       <!-- 形式A 用 -->
       <div id="hdrA">
         <div class="grid">
-          <div class="field"><label>提出先（元請）<span class="muted-note">／一覧から選択も可</span></label><input id="a_onchu" list="dl_onchu" placeholder="例：株式会社ハウジング・コム"></div>
+          <div class="field"><label>提出先（元請）<span class="muted-note">／入力で候補を絞り込み</span></label><input id="a_onchu" autocomplete="off" placeholder="例：株式会社ハウジング・コム"></div>
           <div class="field"><label>敬称（提出先が法人か個人か）</label><select id="a_kind"><option value="法人">法人 → 御中</option><option value="個人">個人 → 様</option></select></div>
           <div class="field"><label>工事名</label><input id="a_kouji" placeholder="例：◯◯マンション修繕工事"></div>
           <div class="field"><label>作成日</label><input id="a_date" type="date"></div>
           <div class="field"><label>工事期間（開始）</label><input id="a_start" type="date"></div>
           <div class="field"><label>工事期間（終了）</label><input id="a_end" type="date"></div>
-          <div class="field"><label>施工者<span class="muted-note">／一覧から選択も可</span></label><input id="a_seko" list="dl_seko"></div>
+          <div class="field"><label>施工者<span class="muted-note">／入力で候補を絞り込み</span></label><input id="a_seko" autocomplete="off"></div>
         </div>
       </div>
 
@@ -236,7 +245,7 @@
           </div>
           <div class="field"><label><span class="b_lbl_name">工事</span>名</label><input id="b_name" placeholder="例：U字溝清掃作業"></div>
           <div class="field"><label><span class="b_lbl_place">工事</span>箇所</label><input id="b_place" placeholder="例：◯◯県◯◯市…"></div>
-          <div class="field"><label>施工者<span class="muted-note">／一覧から選択も可</span></label><input id="b_seko" list="dl_seko"></div>
+          <div class="field"><label>施工者<span class="muted-note">／入力で候補を絞り込み</span></label><input id="b_seko" autocomplete="off"></div>
           <div class="field"><label>作業開始日</label><input id="b_start" type="date"></div>
           <div class="field"><label>作業終了日</label><input id="b_end" type="date"></div>
         </div>
@@ -317,7 +326,7 @@
   <div class="modal-box">
     <div class="modal-title">✅ PDFができました</div>
     <div class="modal-name" id="resultName"></div>
-    <button class="btn primary modal-btn" id="btnShare" type="button">📤 共有する（LINE・メール等）</button>
+    <button class="btn primary modal-btn" id="btnShare" type="button">📤 共有・保存する（LINE等）</button>
     <button class="btn modal-btn modal-dl" id="btnDownload" type="button">⬇️ ダウンロード（端末に保存）</button>
     <div class="modal-hint" id="resultHint"></div>
     <button class="modal-close" id="btnResultClose" type="button">閉じる</button>
@@ -427,6 +436,50 @@
       var b=document.createElement("button"); b.type="button"; b.className="del"; b.textContent="削除"; b.addEventListener("click",function(){ delSeko(n); });
       row.appendChild(nm); row.appendChild(ed); row.appendChild(b); ls.appendChild(row);
     });
+  }
+
+  /* ===== オートコンプリート（入力で候補を絞り込み） ===== */
+  function attachAutocomplete(input, getItems, onPick){
+    var wrap=document.createElement("div"); wrap.className="ac-wrap";
+    input.parentNode.insertBefore(wrap, input); wrap.appendChild(input);
+    var list=document.createElement("div"); list.className="ac-list"; wrap.appendChild(list);
+    var current=[], active=-1;
+    function render(){
+      var q=(input.value||"").trim().toLowerCase();
+      var items=getItems()||[];
+      current = q ? items.filter(function(it){ return it.label.toLowerCase().indexOf(q)>=0; }) : items.slice();
+      list.innerHTML=""; active=-1;
+      if(items.length===0){ list.style.display="none"; return; }
+      if(current.length===0){ list.innerHTML='<div class="ac-none">一致する候補がありません</div>'; list.style.display="block"; return; }
+      current.forEach(function(it){
+        var row=document.createElement("div"); row.className="ac-item";
+        var nm=document.createElement("span"); nm.className="nm"; nm.textContent=it.label; row.appendChild(nm);
+        if(it.kind){ var k=document.createElement("span"); k.className="kd"; k.textContent=(it.kind==="個人"?"様":"御中"); row.appendChild(k); }
+        row.addEventListener("mousedown",function(e){ e.preventDefault(); pick(it); });
+        list.appendChild(row);
+      });
+      list.style.display="block";
+    }
+    function pick(it){ onPick(it); list.style.display="none"; }
+    function hi(){ Array.prototype.forEach.call(list.querySelectorAll(".ac-item"),function(c,i){ c.classList.toggle("active",i===active); }); var a=list.querySelectorAll(".ac-item")[active]; if(a)a.scrollIntoView({block:"nearest"}); }
+    input.addEventListener("focus",render);
+    input.addEventListener("input",render);
+    input.addEventListener("blur",function(){ setTimeout(function(){ list.style.display="none"; },160); });
+    input.addEventListener("keydown",function(e){
+      if(list.style.display==="none"||current.length===0)return;
+      if(e.key==="ArrowDown"){ active=Math.min(active+1,current.length-1); hi(); e.preventDefault(); }
+      else if(e.key==="ArrowUp"){ active=Math.max(active-1,0); hi(); e.preventDefault(); }
+      else if(e.key==="Enter"){ if(active>=0&&current[active]){ pick(current[active]); e.preventDefault(); } }
+      else if(e.key==="Escape"){ list.style.display="none"; }
+    });
+  }
+  function setupAutocompletes(){
+    attachAutocomplete(byId("a_onchu"), function(){ return mOnchu.map(function(o){ return {label:o.name, kind:o.kind}; }); },
+      function(it){ byId("a_onchu").value=it.label; byId("a_kind").value=it.kind||"法人"; schedulePreview(); });
+    attachAutocomplete(byId("a_seko"), function(){ return mSeko.map(function(n){ return {label:n}; }); },
+      function(it){ byId("a_seko").value=it.label; schedulePreview(); });
+    attachAutocomplete(byId("b_seko"), function(){ return mSeko.map(function(n){ return {label:n}; }); },
+      function(it){ byId("b_seko").value=it.label; schedulePreview(); });
   }
 
   /* ===== Firebase（マスタの全端末リアルタイム共有） ===== */
@@ -781,10 +834,12 @@
     byId("resultName").textContent=fname;
     var canShare=false;
     try{ var f=new File([blob],fname,{type:"application/pdf"}); canShare=!!(navigator.canShare&&navigator.canShare({files:[f]})); }catch(e){}
+    // 共有できる端末は「共有・保存」1ボタンに集約（共有シートにLINE送信も保存も入っている）
     byId("btnShare").style.display=canShare?"":"none";
+    byId("btnDownload").style.display=canShare?"none":"";
     byId("resultHint").textContent=canShare
-      ? "「共有」を押すと、PDFファイルだけが送られます（blobのURLは付きません）。"
-      : "「ダウンロード」で端末に保存→保存先アプリから共有してください。";
+      ? "「共有・保存」から、LINE送信も『\"ファイル\"に保存』も選べます。"
+      : "「ダウンロード」で端末に保存できます。";
     byId("resultModal").style.display="flex";
   }
   function doShare(){
@@ -869,6 +924,7 @@
   if(!byId("a_seko").value) byId("a_seko").value="株式会社SAZANKA";
   if(!byId("b_seko").value) byId("b_seko").value="株式会社SAZANKA";
   refreshMaster();
+  setupAutocompletes();
   setShareStatus(false);
   startFirebase();
   byId("a_date").value=todayStr();
