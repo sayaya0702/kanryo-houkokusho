@@ -12,6 +12,8 @@
 <title>完了報告書 作成ツール</title>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" defer></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js" defer></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js" defer></script>
 <style>
   :root{
     --ink:#1a1a1a; --line:#000; --label:#d9d9d9;
@@ -381,19 +383,19 @@
   function registerOnchu(name,kind){
     name=(name||"").trim(); if(!name)return;
     var hit=null; for(var i=0;i<mOnchu.length;i++){ if(mOnchu[i].name===name){hit=mOnchu[i];break;} }
-    if(hit){ if(kind && hit.kind!==kind){ hit.kind=kind; saveMaster(); refreshMaster(); } return; }
-    mOnchu.push({name:name,kind:kind||"法人"}); saveMaster(); refreshMaster();
+    if(hit){ if(kind && hit.kind!==kind){ hit.kind=kind; commitMaster(); } return; }
+    mOnchu.push({name:name,kind:kind||"法人"}); commitMaster();
   }
   function registerSeko(name){
     name=(name||"").trim(); if(!name)return;
     if(mSeko.indexOf(name)>=0)return;
-    mSeko.push(name); saveMaster(); refreshMaster();
+    mSeko.push(name); commitMaster();
   }
-  function delOnchu(name){ if(!confirm("「"+name+"」を削除しますか？"))return; mOnchu=mOnchu.filter(function(o){return o.name!==name;}); saveMaster(); refreshMaster(); }
-  function delSeko(name){ if(!confirm("「"+name+"」を削除しますか？"))return; mSeko=mSeko.filter(function(n){return n!==name;}); saveMaster(); refreshMaster(); }
-  function editOnchu(old){ var nv=prompt("提出先名を編集",old); if(nv==null)return; nv=nv.trim(); if(!nv)return; var o=findOnchu(old); if(o)o.name=nv; saveMaster(); refreshMaster(); }
-  function toggleOnchuKind(name){ var o=findOnchu(name); if(o){ o.kind=(o.kind==="個人"?"法人":"個人"); saveMaster(); refreshMaster(); } }
-  function editSeko(old){ var nv=prompt("施工者名を編集",old); if(nv==null)return; nv=nv.trim(); if(!nv)return; var i=mSeko.indexOf(old); if(i>=0)mSeko[i]=nv; saveMaster(); refreshMaster(); }
+  function delOnchu(name){ if(!confirm("「"+name+"」を削除しますか？"))return; mOnchu=mOnchu.filter(function(o){return o.name!==name;}); commitMaster(); }
+  function delSeko(name){ if(!confirm("「"+name+"」を削除しますか？"))return; mSeko=mSeko.filter(function(n){return n!==name;}); commitMaster(); }
+  function editOnchu(old){ var nv=prompt("提出先名を編集",old); if(nv==null)return; nv=nv.trim(); if(!nv)return; var o=findOnchu(old); if(o)o.name=nv; commitMaster(); }
+  function toggleOnchuKind(name){ var o=findOnchu(name); if(o){ o.kind=(o.kind==="個人"?"法人":"個人"); commitMaster(); } }
+  function editSeko(old){ var nv=prompt("施工者名を編集",old); if(nv==null)return; nv=nv.trim(); if(!nv)return; var i=mSeko.indexOf(old); if(i>=0)mSeko[i]=nv; commitMaster(); }
   function findOnchu(name){ name=(name||"").trim(); for(var i=0;i<mOnchu.length;i++){ if(mOnchu[i].name===name)return mOnchu[i]; } return null; }
 
   function refreshMaster(){
@@ -425,6 +427,49 @@
       var b=document.createElement("button"); b.type="button"; b.className="del"; b.textContent="削除"; b.addEventListener("click",function(){ delSeko(n); });
       row.appendChild(nm); row.appendChild(ed); row.appendChild(b); ls.appendChild(row);
     });
+  }
+
+  /* ===== Firebase（マスタの全端末リアルタイム共有） ===== */
+  var FIREBASE_CONFIG={
+    apiKey:"AIzaSyBJ1S-ZgfAK1xCP50kMV52N5grryjSVOlI",
+    authDomain:"kanryo-houkokusho.firebaseapp.com",
+    projectId:"kanryo-houkokusho",
+    storageBucket:"kanryo-houkokusho.firebasestorage.app",
+    messagingSenderId:"778184135127",
+    appId:"1:778184135127:web:b94adc15164118d38afb92"
+  };
+  var fbDoc=null, fbReady=false, applyingRemote=false;
+  function setShareStatus(on){
+    var el=byId("shareStatus"); if(!el)return;
+    if(on){ el.textContent="✅ 全員で共有中（クラウド同期）"; el.classList.add("on"); }
+    else{ el.textContent="共有：未接続（この端末だけに保存）"; el.classList.remove("on"); }
+  }
+  function pushCloud(){ if(fbDoc){ fbDoc.set({onchu:mOnchu, seko:mSeko, updatedAt:Date.now()}).catch(function(){}); } }
+  function commitMaster(){ saveMaster(); if(!applyingRemote) pushCloud(); refreshMaster(); }
+  function initFirebase(){
+    if(!window.firebase || !FIREBASE_CONFIG.apiKey){ return; }
+    try{
+      firebase.initializeApp(FIREBASE_CONFIG);
+      fbDoc=firebase.firestore().collection("shared").doc("master");
+      fbDoc.onSnapshot(function(snap){
+        fbReady=true; setShareStatus(true);
+        if(snap.exists){
+          var d=snap.data()||{};
+          applyingRemote=true;
+          mOnchu=Array.isArray(d.onchu)?d.onchu:[];
+          mSeko=Array.isArray(d.seko)?d.seko:[];
+          commitMaster();
+          applyingRemote=false;
+        }else{
+          pushCloud(); // 初回：この端末のマスタをクラウドへ
+        }
+      }, function(){ fbReady=false; setShareStatus(false); });
+    }catch(e){ setShareStatus(false); }
+  }
+  function startFirebase(tries){
+    tries=tries||0;
+    if(window.firebase && window.firebase.firestore){ initFirebase(); }
+    else if(tries<40){ setTimeout(function(){ startFirebase(tries+1); }, 200); }
   }
 
   /* ===== 画像取り込み（EXIF補正＋縮小） ===== */
@@ -773,7 +818,7 @@
   ["a_onchu","a_kouji","a_start","a_end","a_seko","a_date","b_type","b_name","b_place","b_seko","b_start","b_end"].forEach(function(id){ byId(id).addEventListener("input",schedulePreview); });
   byId("a_kind").addEventListener("change",function(){
     schedulePreview();
-    var o=findOnchu(byId("a_onchu").value); if(o){ o.kind=this.value; saveMaster(); refreshMaster(); }
+    var o=findOnchu(byId("a_onchu").value); if(o){ o.kind=this.value; commitMaster(); }
   });
   // 提出先を入力/選択したら、マスタに在れば敬称を自動反映
   byId("a_onchu").addEventListener("input",function(){ var o=findOnchu(this.value); if(o){ byId("a_kind").value=o.kind; } });
@@ -824,6 +869,8 @@
   if(!byId("a_seko").value) byId("a_seko").value="株式会社SAZANKA";
   if(!byId("b_seko").value) byId("b_seko").value="株式会社SAZANKA";
   refreshMaster();
+  setShareStatus(false);
+  startFirebase();
   byId("a_date").value=todayStr();
   setFormat("A");
   renderPreview();
