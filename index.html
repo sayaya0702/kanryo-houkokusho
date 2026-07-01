@@ -845,8 +845,8 @@
   function doShare(){
     try{
       var file=new File([_resBlob],_resName,{type:"application/pdf"});
-      // 実験：タイトルを空にして、LINEが共有先に出るか＆吹き出しが消えるか検証
-      navigator.share({files:[file], title:""}).catch(function(){});
+      // LINEは空でないタイトルが無いと共有先に出ないため、報告書名を付与（検証済み）
+      navigator.share({files:[file], title:_resName}).catch(function(){});
     }catch(e){ alert("共有できませんでした。ダウンロードをお使いください。"); }
   }
   function doDownload(){
