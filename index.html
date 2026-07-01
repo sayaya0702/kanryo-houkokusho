@@ -845,7 +845,8 @@
   function doShare(){
     try{
       var file=new File([_resBlob],_resName,{type:"application/pdf"});
-      navigator.share({files:[file]}).catch(function(){});
+      // titleを付けないとLINEが共有先に出ないため、報告書名をtitleに付与
+      navigator.share({files:[file], title:_resName}).catch(function(){});
     }catch(e){ alert("共有できませんでした。ダウンロードをお使いください。"); }
   }
   function doDownload(){
