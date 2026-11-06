@@ -137,6 +137,22 @@
   .coverB-tbl{width:100%;margin:0;}
   .coverB-tbl td.k{background:#fff;width:34mm;letter-spacing:3px;}
 
+  /* 形式C：立会報告書 */
+  .coverC-title{text-align:center;font-size:26px;font-weight:800;letter-spacing:4px;margin:2mm 0 5mm;}
+  table.coverC-tbl{border-collapse:collapse;width:100%;font-size:12.5px;margin:0 0 5mm;}
+  table.coverC-tbl td{border:1px solid #000;padding:5px 9px;}
+  table.coverC-tbl td.k{width:26mm;white-space:nowrap;}
+  table.blockC{border-collapse:collapse;width:100%;table-layout:fixed;margin-bottom:4mm;page-break-inside:avoid;break-inside:avoid;}
+  table.blockC td{border:1px solid #000;vertical-align:top;}
+  table.blockC td.cphoto{width:58%;height:74mm;text-align:center;vertical-align:middle;padding:1.5mm;}
+  table.blockC td.cphoto img{max-width:100%;max-height:71mm;display:block;margin:0 auto;image-orientation:from-image;}
+  table.blockC td.cphoto .ph{color:#bbb;font-size:11px;}
+  table.blockC td.ctext{width:42%;padding:5px 8px;font-size:12px;line-height:1.5;}
+  table.blockC td.ctext .cno{font-weight:700;margin-bottom:6px;}
+  table.blockC td.ctext .cfld{margin-bottom:4px;white-space:pre-wrap;word-break:break-word;}
+  table.blockC.first td.cphoto{height:56mm;}
+  table.blockC.first td.cphoto img{max-height:53mm;}
+
   .page-title{text-align:center;font-size:22px;font-weight:800;letter-spacing:6px;margin:0 0 5mm;}
 
   /* 形式A ブロック */
@@ -215,6 +231,7 @@
         <div class="seg">
           <button type="button" data-fmt="A" class="on">形式A：ビフォーアフター</button>
           <button type="button" data-fmt="B">形式B：写真＋コメント</button>
+          <button type="button" data-fmt="C">形式C：立会報告書</button>
         </div>
         <div class="seg-desc" id="segDesc"></div>
       </div>
@@ -250,6 +267,15 @@
           <div class="field"><label>作業終了日</label><input id="b_end" type="date"></div>
         </div>
         <div class="hint" style="margin-top:6px">※ 日付は自動で「令和◯年◯月◯日」に変換されます。</div>
+      </div>
+
+      <!-- 形式C 用（立会報告書） -->
+      <div id="hdrC" style="display:none">
+        <div class="grid">
+          <div class="field"><label>物件名</label><input id="c_bukken" placeholder="例：ダンデリオン田浦 103"></div>
+          <div class="field"><label>住所</label><input id="c_addr" placeholder="例：神奈川県横須賀市船越町7-24"></div>
+          <div class="field"><label>作成日</label><input id="c_date" type="date"></div>
+        </div>
       </div>
 
       <details class="adv">
@@ -344,11 +370,13 @@
   var seq=1;
   var blocksA=[]; // {id,room,cells:[{naiyou,label,img},{naiyou,label,img}]}
   var blocksB=[]; // {id,head,comment,img}
+  var blocksC=[]; // {id,place,note,img}  立会報告書
   function cellA(label){return {naiyou:"",label:label,img:null};}
   function newA(){return {id:seq++,room:"",cells:[cellA("工事前"),cellA("工事後")]};}
   function newB(){return {id:seq++,head:"",comment:"",img:null};}
+  function newC(){return {id:seq++,place:"",note:"",img:null};}
   var LABELS=["工事前","工事後"];
-  function curBlocks(){return format==="A"?blocksA:blocksB;}
+  function curBlocks(){return format==="A"?blocksA:(format==="B"?blocksB:blocksC);}
 
   /* ===== プリセット ===== */
   var PRESETS={
@@ -555,7 +583,7 @@
       e.textContent="まだ写真がありません。上の「写真をまとめて追加」から始めてください。";
       editor.appendChild(e);
     }
-    arr.forEach(function(b,i){ editor.appendChild(format==="A"?cardA(b,i):cardB(b,i)); });
+    arr.forEach(function(b,i){ editor.appendChild(format==="A"?cardA(b,i):(format==="B"?cardB(b,i):cardC(b,i))); });
     schedulePreview();
   }
 
@@ -624,6 +652,28 @@
     return card;
   }
 
+  function cardC(b,idx){
+    var card=document.createElement("div"); card.className="block-card";
+    var head=document.createElement("div"); head.className="block-head";
+    head.innerHTML='<span class="bnum">No.'+(idx+1)+'</span><div class="room field"><input placeholder="撮影場所（例：脱衣場 / 洗濯パン）"></div>';
+    var hi=head.querySelector("input"); hi.value=b.place;
+    hi.addEventListener("input",function(){b.place=this.value;schedulePreview();});
+    head.appendChild(ctlButtons(idx)); card.appendChild(head);
+    var two=document.createElement("div"); two.className="twocol";
+    var left=document.createElement("div"); left.className="pcell";
+    left.innerHTML='<div class="pc-head">写真</div>'; left.appendChild(dropZone(b));
+    var right=document.createElement("div"); right.className="pcell";
+    right.innerHTML='<div class="pc-head">備考（任意）</div>';
+    var ta=document.createElement("textarea"); ta.value=b.note; ta.placeholder="例：鍵紛失 / 処分済み / （ご提案）CF張替え";
+    ta.style.minHeight="80px"; ta.style.width="100%"; ta.style.resize="vertical";
+    ta.style.border="1px solid #e2cdb8"; ta.style.borderRadius="7px"; ta.style.padding="8px"; ta.style.fontFamily="inherit"; ta.style.fontSize="14px";
+    ta.addEventListener("input",function(){b.note=this.value;schedulePreview();});
+    right.appendChild(ta);
+    two.appendChild(left); two.appendChild(right);
+    card.appendChild(two);
+    return card;
+  }
+
   function dropZone(obj){
     var drop=document.createElement("label"); drop.className="drop";
     var fi=document.createElement("input"); fi.type="file"; fi.accept="image/*"; fi.className="filehide"; drop.appendChild(fi);
@@ -650,10 +700,11 @@
   function dup(i){
     var a=curBlocks(),s=a[i],c;
     if(format==="A") c={id:seq++,room:s.room,cells:s.cells.map(function(x){return {naiyou:x.naiyou,label:x.label,img:x.img};})};
-    else c={id:seq++,head:s.head,comment:s.comment,img:s.img};
+    else if(format==="B") c={id:seq++,head:s.head,comment:s.comment,img:s.img};
+    else c={id:seq++,place:s.place,note:s.note,img:s.img};
     a.splice(i+1,0,c); renderEditor();
   }
-  function addBlock(){ curBlocks().push(format==="A"?newA():newB()); renderEditor(); }
+  function addBlock(){ curBlocks().push(format==="A"?newA():(format==="B"?newB():newC())); renderEditor(); }
 
   /* ===== まとめて追加 ===== */
   byId("bulkInput").addEventListener("change",function(){
@@ -666,8 +717,10 @@
   function buildFromBulk(datas){
     if(format==="A"){
       for(var i=0;i<datas.length;i+=2){ var b=newA(); b.cells[0].img=datas[i]||null; b.cells[1].img=datas[i+1]||null; blocksA.push(b); }
-    }else{
+    }else if(format==="B"){
       for(var j=0;j<datas.length;j++){ var k=newB(); k.img=datas[j]||null; blocksB.push(k); }
+    }else{
+      for(var m=0;m<datas.length;m++){ var c=newC(); c.img=datas[m]||null; blocksC.push(c); }
     }
     renderEditor();
   }
@@ -751,6 +804,26 @@
     return t;
   }
 
+  function buildHeaderC(){
+    var bukken=esc(byId("c_bukken").value)||"　", addr=esc(byId("c_addr").value)||"　";
+    var date=fmtSlash(byId("c_date").value)||"　";
+    var d=document.createElement("div"); d.className="coverC";
+    d.innerHTML='<div class="coverC-title">立会報告書</div>'+
+      '<table class="coverC-tbl"><tr><td class="k">物件名</td><td>'+bukken+'</td></tr>'+
+      '<tr><td class="k">住所</td><td>'+addr+'</td></tr>'+
+      '<tr><td class="k">作成日</td><td>'+esc(date)+'</td></tr></table>';
+    return d;
+  }
+  function tableC(b,no,isFirst){
+    var t=document.createElement("table"); t.className="blockC"+(isFirst?" first":"");
+    var photo=b.img?'<img src="'+b.img+'">':'<span class="ph">（写真なし）</span>';
+    t.innerHTML='<tr><td class="cphoto">'+photo+'</td>'+
+      '<td class="ctext"><div class="cno">No.'+no+'</div>'+
+      '<div class="cfld">撮影場所：'+esc(b.place)+'</div>'+
+      '<div class="cfld">備考：'+esc(b.note)+'</div></td></tr>';
+    return t;
+  }
+
   function renderPreview(){
     pagesEl.innerHTML="";
     var arr=curBlocks();
@@ -759,19 +832,29 @@
       chunks.push({cover:true,items:arr.slice(0,2)});
       for(var i=2;i<arr.length;i+=3) chunks.push({cover:false,items:arr.slice(i,i+3)});
       if(arr.length===0) chunks=[{cover:true,items:[]}];
-    }else{
+    }else if(format==="B"){
       chunks.push({cover:true,items:[]});
       for(var j=0;j<arr.length;j+=3) chunks.push({cover:false,items:arr.slice(j,j+3)});
+    }else{ // 形式C：立会報告書（1ページ目＝ヘッダ＋3枚、以降3枚）
+      chunks.push({cover:true,items:arr.slice(0,3)});
+      for(var m=3;m<arr.length;m+=3) chunks.push({cover:false,items:arr.slice(m,m+3)});
+      if(arr.length===0) chunks=[{cover:true,items:[]}];
     }
     var total=chunks.length, noCounter=0;
     chunks.forEach(function(ch,pi){
       var holder=document.createElement("div"); holder.className="page-holder";
       var page=document.createElement("div"); page.className="page";
-      if(ch.cover){ page.appendChild(format==="A"?buildCoverA():buildCoverB()); }
-      else{ var h=document.createElement("div"); h.className="page-title"; h.textContent=(format==="A"?"工事完了報告書":(byId("b_type").value==="作業"?"作業完了報告書":"工事完了報告書")); page.appendChild(h); }
+      if(ch.cover){
+        if(format==="A") page.appendChild(buildCoverA());
+        else if(format==="B") page.appendChild(buildCoverB());
+        else page.appendChild(buildHeaderC());
+      }else if(format!=="C"){
+        var h=document.createElement("div"); h.className="page-title"; h.textContent=(format==="A"?"工事完了報告書":(byId("b_type").value==="作業"?"作業完了報告書":"工事完了報告書")); page.appendChild(h);
+      }
       ch.items.forEach(function(b){
         if(format==="A") page.appendChild(tableA(b));
-        else { noCounter++; page.appendChild(tableB(b,noCounter)); }
+        else if(format==="B"){ noCounter++; page.appendChild(tableB(b,noCounter)); }
+        else { noCounter++; page.appendChild(tableC(b,noCounter,ch.cover)); }
       });
       var foot=document.createElement("div"); foot.className="page-foot"; foot.textContent=(pi+1)+" / "+total;
       page.appendChild(foot);
@@ -790,6 +873,7 @@
   /* ===== PDF生成（ページ単位） ===== */
   function pdfName(){
     if(format==="A") return (byId("a_kouji").value||"工事完了報告書");
+    if(format==="C") return (byId("c_bukken").value?("立会報告書_"+byId("c_bukken").value):"立会報告書");
     return (byId("b_name").value||(byId("b_type").value==="作業"?"作業完了報告書":"工事完了報告書"));
   }
   function clearTransforms(){ pagesEl.querySelectorAll(".page-holder").forEach(function(h){ var pg=h.firstChild; pg.style.transform="none"; h.style.width="auto"; h.style.height="auto"; }); }
@@ -797,7 +881,7 @@
   async function generatePDF(){
     // 使用した提出先・施工者をマスタへ自動登録
     if(format==="A"){ registerOnchu(byId("a_onchu").value, byId("a_kind").value); registerSeko(byId("a_seko").value); }
-    else { registerSeko(byId("b_seko").value); }
+    else if(format==="B"){ registerSeko(byId("b_seko").value); }
     renderPreview();
     await new Promise(function(r){setTimeout(r,350);});
     if(!window.jspdf || !window.html2canvas){
@@ -862,16 +946,20 @@
     Array.prototype.forEach.call(document.querySelectorAll(".seg button"),function(b){ b.classList.toggle("on",b.dataset.fmt===f); });
     byId("hdrA").style.display=(f==="A")?"":"none";
     byId("hdrB").style.display=(f==="B")?"":"none";
-    byId("segDesc").textContent=(f==="A")?"左：工事前／右：工事後を1組ずつ。表紙＋3組/ページ。":"写真1枚＋見出し＋コメント欄。3枚/ページ。";
+    byId("hdrC").style.display=(f==="C")?"":"none";
+    byId("segDesc").textContent=(f==="A")?"左：工事前／右：工事後を1組ずつ。表紙＋3組/ページ。"
+      :(f==="B"?"写真1枚＋見出し＋コメント欄。3枚/ページ。":"物件立会の記録。写真1枚＋撮影場所＋備考。3枚/ページ。");
     byId("photoHint").innerHTML=(f==="A")
       ? "・<b>まとめて選ぶ</b>と、ファイル名順に<b>2枚ずつ「工事前・工事後」</b>へ自動配置。<br>・各組に「号室／場所」を入力（左を入れると右へ自動コピー）。"
-      : "・<b>まとめて選ぶ</b>と、ファイル名順に<b>1枚ずつ</b>並びます（No.は自動）。<br>・各写真に「見出し」、必要ならコメントを入力。";
+      : (f==="B"
+        ? "・<b>まとめて選ぶ</b>と、ファイル名順に<b>1枚ずつ</b>並びます（No.は自動）。<br>・各写真に「見出し」、必要ならコメントを入力。"
+        : "・<b>まとめて選ぶ</b>と、ファイル名順に<b>1枚ずつ</b>並びます（No.は自動）。<br>・各写真に「撮影場所」、必要なら備考を入力。");
     renderEditor();
   }
 
   /* ===== イベント ===== */
   Array.prototype.forEach.call(document.querySelectorAll(".seg button"),function(b){ b.addEventListener("click",function(){setFormat(this.dataset.fmt);}); });
-  ["a_onchu","a_kouji","a_start","a_end","a_seko","a_date","b_type","b_name","b_place","b_seko","b_start","b_end"].forEach(function(id){ byId(id).addEventListener("input",schedulePreview); });
+  ["a_onchu","a_kouji","a_start","a_end","a_seko","a_date","b_type","b_name","b_place","b_seko","b_start","b_end","c_bukken","c_addr","c_date"].forEach(function(id){ byId(id).addEventListener("input",schedulePreview); });
   byId("a_kind").addEventListener("change",function(){
     schedulePreview();
     var o=findOnchu(byId("a_onchu").value); if(o){ o.kind=this.value; commitMaster(); }
@@ -913,8 +1001,8 @@
   byId("tabBtnMaster").addEventListener("click",function(){ showTab("master"); });
   byId("btnClear").addEventListener("click",function(){
     if(!confirm("入力内容と写真をすべて消して新規作成しますか？\n（差出人情報は残ります）"))return;
-    blocksA=[]; blocksB=[]; seq=1;
-    ["a_onchu","a_kouji","a_start","a_end","b_name","b_place","b_start","b_end"].forEach(function(id){byId(id).value="";});
+    blocksA=[]; blocksB=[]; blocksC=[]; seq=1;
+    ["a_onchu","a_kouji","a_start","a_end","b_name","b_place","b_start","b_end","c_bukken","c_addr"].forEach(function(id){byId(id).value="";});
     renderEditor();
   });
 
@@ -929,6 +1017,7 @@
   setShareStatus(false);
   startFirebase();
   byId("a_date").value=todayStr();
+  byId("c_date").value=todayStr();
   setFormat("A");
   renderPreview();
 })();
